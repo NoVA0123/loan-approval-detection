@@ -1,0 +1,15 @@
+graphviz
+matplotlib
+numpy==1.26.4
+pandas
+plotly
+scipy
+six
+catboost
+xgboost
+scikit-learn
+polars
+duckdb
+lightgbm
+statsmodels
+fastexcel
