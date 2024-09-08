@@ -1,14 +1,16 @@
 import numpy as np
 import polars as pl
+import polars.selectors as cs
 import duckdb
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
-from scipy.stats import chi2_contingency
+from scipy.stats import chi2_contingency, f_oneway
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
+from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
@@ -38,13 +40,13 @@ df1 = df1.filter(pl.col('Age_Oldest_TL') != -99999)
 # removing columns if null values (-99999) have occurred more than 10000 times
 # print(df2.shape)
 ColsToRmv = []
-for i in df2.select([pl.col(pl.Int64), pl.col(pl.Float64)]).columns:
+for i in df2.select([cs.integer(), cs.float()]).columns:
     if df2.filter(pl.col(i) == -99999).shape[0] > 10000:
         ColsToRmv.append(i)
 # print(ColsToRmv)
 df2 = df2.drop(ColsToRmv)
 # print(df2.shape)
-for i in df2.select([pl.col(pl.Int64), pl.col(pl.Float64)]).columns:
+for i in df2.select([cs.integer(), cs.float()]).columns:
     df2 = df2.filter(pl.col(i) != -99999)
 print(df2.shape)
 
@@ -64,6 +66,8 @@ print(df.shape)
 
 # checking contingency of categorical variable with our target variable
 CheckCols = df2.select([pl.col(pl.String)]).columns[:-1]
+
+
 def pivot_creator(Index: str,
                   DataFrame: pl.DataFrame = df) -> list:
     # Pivot the dataframe to show it in cross tabulation form
@@ -73,6 +77,8 @@ def pivot_creator(Index: str,
     return CrossTab
 
 # print(CheckCols)
+
+
 for i in CheckCols:
     chi2, pval, _, _ = chi2_contingency(pivot_creator(i))
 
@@ -83,7 +89,7 @@ del CheckCols
 
 
 # VIF sequential check
-VifData = df.select([pl.col(pl.Int64), pl.col(pl.Float64)])
+VifData = df.select([cs.integer(), cs.float()])
 ColKept = []
 ColIndex = 0
 
@@ -106,7 +112,6 @@ del VifValue
 
 
 # Checking Anova for columns to be kept
-from scipy.stats import f_oneway
 
 GrpDf = df.group_by('Approved_Flag').all()
 UniqueItems = GrpDf[:, 'Approved_Flag'].to_list()
@@ -142,7 +147,7 @@ Mapper = {'SSC': 1,
           'PROFESSIONAL': 3,
           'OTHERS': 1}
 
-df = df.with_columns(pl.col('EDUCATION').replace(Mapper).cast(pl.Int64))
+df = df.with_columns(pl.col('EDUCATION').replace(Mapper).cast(pl.UInt8))
 
 del Mapper
 
@@ -171,7 +176,7 @@ x_train, x_test, y_train, y_test = train_test_split(x,
                                                     y,
                                                     test_size=0.2,
                                                     random_state=1337)
-
+'''
 # Random Forest model
 print("RANDOM FOREST")
 RfClassifier = RandomForestClassifier(n_estimators=200,
@@ -212,7 +217,6 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
 
 
 # Encoding labels for gradient boosters
-from sklearn.preprocessing import LabelEncoder
 
 print("\nXTREME GRADIENT BOOSTING")
 XgbClassifier = XGBClassifier(objective='multi:softmax',
@@ -270,6 +274,52 @@ LgbmClassifier = LGBMClassifier(objective='multiclass',
 
 LgbmClassifier.fit(x_train, y_train)
 y_pred = LgbmClassifier.predict(x_test)
+
+accuracy = accuracy_score(y_test, y_pred)
+print(f'\nAccuracy: {accuracy: .7f}')
+
+precision, recall, F1Score, _ = precision_recall_fscore_support(y_test, y_pred)
+
+for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
+    print(f"Class {v}")
+    print(f"Precision: {precision[i]: .7f}")
+    print(f"Recall: {recall[i]: .7f}")
+    print(f"F1 Score: {F1Score[i]: .7f}")
+
+'''
+# Trying grid search on Xgboost, LightGBM and CatBoost
+LabelEnc = LabelEncoder()
+x = x.to_numpy()
+y_encoded = LabelEnc.fit_transform(y)
+
+x_train, x_test, y_train, y_test = train_test_split(x,
+                                                    y_encoded,
+                                                    test_size=0.2,
+                                                    random_state=1337)
+
+print('\nGRID SEARCH ON XGBOOST')
+ParamGrid = {
+        'colsample_bytree': [0.1, 0.3, 0.5, 0.7, 0.9],
+        'learning_rate': [0.001, 0.01, 0.1, 1],
+        'max_depth': [3, 5, 8, 10],
+        'alpha': [1, 10, 100],
+        'n_estimators': [10, 50, 100]
+        }
+
+XgbEstimator = XGBClassifier(objective='multi:softmax',
+                             num_class=4,
+                             random_state=1337)
+
+GridSearchXgb = GridSearchCV(estimator=XgbEstimator,
+                             param_grid=ParamGrid,
+                             scoring='accuracy',
+                             cv=5,
+                             n_jobs=-1,
+                             verbose=3)
+
+GridSearchXgb.fit(x_train, y_train)
+
+y_pred = GridSearchXgb.predict(x_test)
 
 accuracy = accuracy_score(y_test, y_pred)
 print(f'\nAccuracy: {accuracy: .7f}')

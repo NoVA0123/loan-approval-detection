@@ -13,3 +13,4 @@ duckdb
 lightgbm
 statsmodels
 fastexcel
+dask[complete]
