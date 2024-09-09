@@ -9,8 +9,8 @@ catboost
 xgboost
 scikit-learn
 polars
-duckdb
 lightgbm
 statsmodels
 fastexcel
 dask[complete]
+dask-cuda

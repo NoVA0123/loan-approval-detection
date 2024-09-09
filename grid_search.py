@@ -1,5 +1,5 @@
 import dask.array as da
-from xgbosst.dask import DaskXGBClassifier
+from xgboost.dask import DaskXGBClassifier
 from lightgbm import DaskLGBMClassifier
 from dask.distributed import Client
 from dask_cuda import LocalCUDACluster
