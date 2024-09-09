@@ -25,7 +25,7 @@ except Exception:
     device = 'cpu'
 
 # Importing config file
-with open('config.json', 'r') as f:
+with open('/kaggle/working/credit-fraud-detection/config.json', 'r') as f:
     data = json.load(f)
 
 df1_path = data['dataset_location']["level_1"]
