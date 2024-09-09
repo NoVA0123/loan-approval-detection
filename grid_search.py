@@ -15,10 +15,10 @@ def load_cluster():
     return cluster, client
 
 
-def data_converter(x_train: np.array,
-                   x_test: np.array,
-                   y_train: np.array,
-                   y_test: np.array) -> tuple:
+def data_converter_dask(x_train: np.array,
+                        x_test: np.array,
+                        y_train: np.array,
+                        y_test: np.array) -> tuple:
 
     x_train = da.from_array(x_train)
     x_test = da.from_array(x_test)

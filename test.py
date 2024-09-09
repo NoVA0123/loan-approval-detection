@@ -1,23 +1,27 @@
-import numpy as np
+import grid_search
 import polars as pl
 import polars.selectors as cs
-import duckdb
-import matplotlib.pyplot as plt
-from sklearn.metrics import r2_score
 from scipy.stats import chi2_contingency, f_oneway
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
+from sklearn.metrics import (accuracy_score,
+                             precision_recall_fscore_support)
 from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
-from lightgbm import LGBMClassifier
+import lightgbm as lgb
 from xgboost import XGBClassifier
-import os
+import subprocess
 import warnings
 warnings.filterwarnings('ignore')
 
+# Checking if GPU available or not
+try:
+    subprocess.check_output('nvidia-smi')
+    device = 'cuda'
+except Exception:
+    device = 'cpu'
 
 # reading the data
 df1 = pl.read_excel('~/Downloads/case_study1.xlsx')
@@ -176,7 +180,7 @@ x_train, x_test, y_train, y_test = train_test_split(x,
                                                     y,
                                                     test_size=0.2,
                                                     random_state=1337)
-'''
+
 # Random Forest model
 print("RANDOM FOREST")
 RfClassifier = RandomForestClassifier(n_estimators=200,
@@ -249,6 +253,8 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
 # Catboost classifier
 print("\nCATBOOST CLASSIFIER")
 CBClassifier = CatBoostClassifier(objective='MultiClass',
+                                  task_type='GPU',
+                                  devices='0',
                                   random_state=1337,
                                   verbose=False)
 
@@ -269,10 +275,17 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
 
 # Light GBM Classifier
 print("\nLIGHTGBM CLASSIFIER")
-LgbmClassifier = LGBMClassifier(objective='multiclass',
-                                random_state=1337)
+LGBParams = {
+        'boosting_type': 'gbdt',
+        'objective': 'multiclass',
+        'seed': 1337,
+        'metric': 'auc',
+        'device_type': device
+        }
+LgbmClassifier = lgb.train(LGBParams,
+                           x_train,
+                           y_train)
 
-LgbmClassifier.fit(x_train, y_train)
 y_pred = LgbmClassifier.predict(x_test)
 
 accuracy = accuracy_score(y_test, y_pred)
@@ -286,41 +299,29 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
     print(f"Recall: {recall[i]: .7f}")
     print(f"F1 Score: {F1Score[i]: .7f}")
 
-'''
+
 # Trying grid search on Xgboost, LightGBM and CatBoost
-LabelEnc = LabelEncoder()
-x = x.to_numpy()
-y_encoded = LabelEnc.fit_transform(y)
 
-x_train, x_test, y_train, y_test = train_test_split(x,
-                                                    y_encoded,
-                                                    test_size=0.2,
-                                                    random_state=1337)
 
-print('\nGRID SEARCH ON XGBOOST')
-ParamGrid = {
-        'colsample_bytree': [0.1, 0.3, 0.5, 0.7, 0.9],
+# CatBoost
+print('\nGRID SEARCH ON CATBOOST')
+ParamGridCBC = {
         'learning_rate': [0.001, 0.01, 0.1, 1],
         'max_depth': [3, 5, 8, 10],
-        'alpha': [1, 10, 100],
+        'reg_lambda': [1, 10, 100],
         'n_estimators': [10, 50, 100]
         }
 
-XgbEstimator = XGBClassifier(objective='multi:softmax',
-                             num_class=4,
-                             random_state=1337)
+CBClassifier = CatBoostClassifier(objective='MultiClass',
+                                  task_type='GPU',
+                                  devices='0',
+                                  random_state=1337,
+                                  verbose=False)
+CBCGridSearch = CBClassifier.grid_search(ParamGridCBC,
+                                         X=x_train,
+                                         y=y_train)
 
-GridSearchXgb = GridSearchCV(estimator=XgbEstimator,
-                             param_grid=ParamGrid,
-                             scoring='accuracy',
-                             cv=5,
-                             n_jobs=-1,
-                             verbose=3)
-
-GridSearchXgb.fit(x_train, y_train)
-
-y_pred = GridSearchXgb.predict(x_test)
-
+y_pred = CBCGridSearch.predict(x_test)
 accuracy = accuracy_score(y_test, y_pred)
 print(f'\nAccuracy: {accuracy: .7f}')
 
@@ -331,3 +332,53 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
     print(f"Precision: {precision[i]: .7f}")
     print(f"Recall: {recall[i]: .7f}")
     print(f"F1 Score: {F1Score[i]: .7f}")
+
+
+# Loading cluster for parallel computing
+cluster, client = grid_search.load_cluster()
+
+x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
+                                                                   x_test,
+                                                                   y_train,
+                                                                   y_test)
+
+
+# XGBOOST
+print('\nGRID SEARCH ON XGBOOST')
+ParamGridXGB = {
+        'colsample_bytree': [0.1, 0.3, 0.5, 0.7, 0.9],
+        'learning_rate': [0.001, 0.01, 0.1, 1],
+        'max_depth': [3, 5, 8, 10],
+        'alpha': [1, 10, 100],
+        'n_estimators': [10, 50, 100]
+        }
+
+
+DistXgbEsti = grid_search.dask_xgboost(client)
+XgbGridSearch = grid_search.muti_gpu_gridsearch(x_train,
+                                                x_test,
+                                                y_train,
+                                                y_test,
+                                                DistXgbEsti,
+                                                ParamGrid=ParamGridXGB)
+
+
+# LightGBM param grid has only one change:
+# alpha -> reg_alpha
+print('\nGRID SEARCH ON LIGHTGBM')
+ParamGridLGBM = {
+        'colsample_bytree': [0.1, 0.3, 0.5, 0.7, 0.9],
+        'learning_rate': [0.001, 0.01, 0.1, 1],
+        'max_depth': [3, 5, 8, 10],
+        'reg_alpha': [1, 10, 100],
+        'n_estimators': [10, 50, 100]
+        }
+
+
+DistLgbmEsti = grid_search.dask_lgbm(client)
+XgbGridSearch = grid_search.muti_gpu_gridsearch(x_train,
+                                                x_test,
+                                                y_train,
+                                                y_test,
+                                                DistLgbmEsti,
+                                                ParamGrid=ParamGridLGBM)
