@@ -1,0 +1,6 @@
+{
+    "dataset_location":{
+        "level_1": "/kaggle/input/credit-risk-modelling-dataset/case_study1.xlsx",
+        "level_2": "/kaggle/input/credit-risk-modelling-dataset/case_study2.xlsx"
+    }
+}

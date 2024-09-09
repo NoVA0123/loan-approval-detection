@@ -12,6 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
 import lightgbm as lgb
 from xgboost import XGBClassifier
+import json
 import subprocess
 import warnings
 warnings.filterwarnings('ignore')
@@ -23,16 +24,19 @@ try:
 except Exception:
     device = 'cpu'
 
+# Importing config file
+with open('config.json', 'r') as f:
+    data = json.load(f)
+
+df1_path = data['dataset_location']["level_1"]
+df2_path = data['dataset_location']["level_2"]
+
+
 # reading the data
-df1 = pl.read_excel('~/Downloads/case_study1.xlsx')
-df2 = pl.read_excel('~/Downloads/case_study2.xlsx')
+df1 = pl.read_excel(df1_path)
+df2 = pl.read_excel(df2_path)
 print(df1.describe())
 print(df2.describe())
-
-
-# Storing the orginal data
-Originaldf1 = df1.clone()
-Originaldf2 = df2.clone()
 
 
 # removing '-99999' from  oldest TL
