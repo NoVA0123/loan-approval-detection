@@ -302,6 +302,7 @@ LGBParams = {
 
 LgbmClassifier = lgb.LGBMClassifier(objective='multiclass',
                                     random_state=1337)
+LgbmClassifier.fit(x_train, y_train)
 
 y_pred = LgbmClassifier.predict(x_test)
 y_pred = np.argmax(y_pred, axis=1)
