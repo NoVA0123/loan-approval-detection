@@ -305,8 +305,6 @@ LgbmClassifier = lgb.LGBMClassifier(objective='multiclass',
 LgbmClassifier.fit(x_train, y_train)
 
 y_pred = LgbmClassifier.predict(x_test)
-y_pred = np.argmax(y_pred, axis=1)
-
 accuracy = accuracy_score(y_test, y_pred)
 print(f'\nAccuracy: {accuracy: .7f}')
 
