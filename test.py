@@ -26,6 +26,11 @@ except Exception:
     device = 'cpu'
 
 
+# Creating clusters
+if device == 'cuda':
+    cluster, client = grid_search.load_cluster()
+
+
 # Argument Parsing
 parser = ArgumentParser()
 parser.add_argument('--path', dest='Paths', action='append')
@@ -357,8 +362,6 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
 
 # Loading cluster for parallel computing
 if device == 'cuda':
-    cluster, client = grid_search.load_cluster()
-
     x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
                                                                        x_test,
                                                                        y_train,
