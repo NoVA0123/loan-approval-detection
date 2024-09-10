@@ -1,4 +1,5 @@
 import grid_search
+import numpy as np
 import polars as pl
 import polars.selectors as cs
 from scipy.stats import chi2_contingency, f_oneway
@@ -12,7 +13,6 @@ from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
 import lightgbm as lgb
 from xgboost import XGBClassifier
-import json
 import subprocess
 import warnings
 warnings.filterwarnings('ignore')
@@ -24,17 +24,10 @@ try:
 except Exception:
     device = 'cpu'
 
-# Importing config file
-with open('/kaggle/working/credit-fraud-detection/config.json', 'r') as f:
-    data = json.load(f)
-
-df1_path = data['dataset_location']["level_1"]
-df2_path = data['dataset_location']["level_2"]
-
 
 # reading the data
-df1 = pl.read_excel(df1_path)
-df2 = pl.read_excel(df2_path)
+df1 = pl.read_excel('case_study1.xlsx')
+df2 = pl.read_excel('case_study2.xlsx')
 print(df1.describe())
 print(df2.describe())
 
@@ -79,7 +72,10 @@ CheckCols = df2.select([pl.col(pl.String)]).columns[:-1]
 def pivot_creator(Index: str,
                   DataFrame: pl.DataFrame = df) -> list:
     # Pivot the dataframe to show it in cross tabulation form
-    CrossTab = DataFrame.pivot(on="Approved_Flag", index=Index, values="Approved_Flag", aggregate_function='count')
+    CrossTab = DataFrame.pivot(on="Approved_Flag",
+                               index=Index,
+                               values="Approved_Flag",
+                               aggregate_function='count')
     # Remove index and convert it into list
     CrossTab = CrossTab.to_numpy()[:, 1:].tolist()
     return CrossTab
@@ -256,8 +252,12 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
 
 # Catboost classifier
 print("\nCATBOOST CLASSIFIER")
+if device == 'cuda':
+    task_type = 'GPU'
+else:
+    task_type = "CPU"
 CBClassifier = CatBoostClassifier(objective='MultiClass',
-                                  task_type='GPU',
+                                  task_type=task_type,
                                   devices='0',
                                   random_state=1337,
                                   verbose=False)
@@ -283,14 +283,17 @@ LGBParams = {
         'boosting_type': 'gbdt',
         'objective': 'multiclass',
         'seed': 1337,
-        'metric': 'auc',
-        'device_type': device
+        'metric': 'multi_logloss',
+        'device_type': device,
+        'num_class': 4
         }
+
+LgbmDataset = lgb.Dataset(x_train, label=y_train)
 LgbmClassifier = lgb.train(LGBParams,
-                           x_train,
-                           y_train)
+                           LgbmDataset)
 
 y_pred = LgbmClassifier.predict(x_test)
+y_pred = np.argmax(y_pred, axis=1)
 
 accuracy = accuracy_score(y_test, y_pred)
 print(f'\nAccuracy: {accuracy: .7f}')
@@ -317,15 +320,19 @@ ParamGridCBC = {
         }
 
 CBClassifier = CatBoostClassifier(objective='MultiClass',
-                                  task_type='GPU',
+                                  task_type=task_type,
                                   devices='0',
                                   random_state=1337,
                                   verbose=False)
-CBCGridSearch = CBClassifier.grid_search(ParamGridCBC,
-                                         X=x_train,
-                                         y=y_train)
 
-y_pred = CBCGridSearch.predict(x_test)
+CbcGridSearch = grid_search.gridsearch(x_train,
+                                       x_test,
+                                       y_train,
+                                       y_test,
+                                       CBClassifier,
+                                       ParamGrid=ParamGridCBC)
+
+y_pred = CbcGridSearch.predict(x_test)
 accuracy = accuracy_score(y_test, y_pred)
 print(f'\nAccuracy: {accuracy: .7f}')
 
@@ -339,12 +346,13 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
 
 
 # Loading cluster for parallel computing
-cluster, client = grid_search.load_cluster()
+if device=='cuda':
+    cluster, client = grid_search.load_cluster()
 
-x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
-                                                                   x_test,
-                                                                   y_train,
-                                                                   y_test)
+    x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
+                                                                       x_test,
+                                                                       y_train,
+                                                                       y_test)
 
 
 # XGBOOST
@@ -357,14 +365,19 @@ ParamGridXGB = {
         'n_estimators': [10, 50, 100]
         }
 
+if device == "cuda":
+    DistXgbEsti = grid_search.dask_xgboost(client)
+else:
+    DistXgbEsti = XGBClassifier(objective='multi:softmax',
+                                num_class=4,
+                                random_state=1337)
 
-DistXgbEsti = grid_search.dask_xgboost(client)
-XgbGridSearch = grid_search.muti_gpu_gridsearch(x_train,
-                                                x_test,
-                                                y_train,
-                                                y_test,
-                                                DistXgbEsti,
-                                                ParamGrid=ParamGridXGB)
+XgbGridSearch = grid_search.gridsearch(x_train,
+                                       x_test,
+                                       y_train,
+                                       y_test,
+                                       DistXgbEsti,
+                                       ParamGrid=ParamGridXGB)
 
 
 # LightGBM param grid has only one change:
@@ -378,11 +391,14 @@ ParamGridLGBM = {
         'n_estimators': [10, 50, 100]
         }
 
-
-DistLgbmEsti = grid_search.dask_lgbm(client)
-XgbGridSearch = grid_search.muti_gpu_gridsearch(x_train,
-                                                x_test,
-                                                y_train,
-                                                y_test,
-                                                DistLgbmEsti,
-                                                ParamGrid=ParamGridLGBM)
+if device == 'cuda':
+    DistLgbmEsti = grid_search.dask_lgbm(client)
+else:
+    estimator = lgb.LGBMClassifier(objective='multiclass',
+                                   random_state=1337)
+LgbmGridSearch = grid_search.gridsearch(x_train,
+                                        x_test,
+                                        y_train,
+                                        y_test,
+                                        DistLgbmEsti,
+                                        ParamGrid=ParamGridLGBM)

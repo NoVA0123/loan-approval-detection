@@ -46,12 +46,12 @@ def dask_lgbm(client: Client) -> DaskLGBMClassifier:
     return estimator
 
 
-def mulit_gpu_gridsearch(x_train: da,
-                         x_test: da,
-                         y_train: da,
-                         y_test: da,
-                         estimator,
-                         ParamGrid: dict):
+def gridsearch(x_train: da,
+               x_test: da,
+               y_train: da,
+               y_test: da,
+               estimator,
+               ParamGrid: dict):
 
     GridSearch = GridSearchCV(estimator,
                               param_grid=ParamGrid,
