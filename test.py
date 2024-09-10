@@ -28,7 +28,7 @@ except Exception:
 
 # Argument Parsing
 parser = ArgumentParser()
-parser.add_argument('--path', dest='Path', action='append')
+parser.add_argument('--path', dest='Paths', action='append')
 paths = parser.parse_args()
 
 if paths.Paths[0] == "N":
