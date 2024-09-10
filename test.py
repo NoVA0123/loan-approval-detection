@@ -14,6 +14,7 @@ from catboost import CatBoostClassifier
 import lightgbm as lgb
 from xgboost import XGBClassifier
 import subprocess
+from argparse import ArgumentParser
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -25,9 +26,20 @@ except Exception:
     device = 'cpu'
 
 
+# Argument Parsing
+parser = ArgumentParser()
+parser.add_argument('--path', dest='Path', action='append')
+paths = parser.parse_args()
+
+if paths.Paths[0] == "N":
+    df1_path = 'case_study1.xlsx'
+    df2_path = 'case_study2.xlsx'
+else:
+    df1_path = paths.Paths[0]
+    df2_path = paths.Paths[1]
 # reading the data
-df1 = pl.read_excel('case_study1.xlsx')
-df2 = pl.read_excel('case_study2.xlsx')
+df1 = pl.read_excel(df1_path)
+df2 = pl.read_excel(df2_path)
 print(df1.describe())
 print(df2.describe())
 
