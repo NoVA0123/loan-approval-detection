@@ -26,8 +26,8 @@ except Exception:
 
 
 # reading the data
-df1 = pl.read_excel('../case_study1.xlsx')
-df2 = pl.read_excel('../case_study2.xlsx')
+df1 = pl.read_excel('case_study1.xlsx')
+df2 = pl.read_excel('case_study2.xlsx')
 print(df1.describe())
 print(df2.describe())
 
