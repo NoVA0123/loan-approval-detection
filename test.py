@@ -1,5 +1,4 @@
 import grid_search
-import numpy as np
 import polars as pl
 import polars.selectors as cs
 from scipy.stats import chi2_contingency, f_oneway
@@ -27,8 +26,9 @@ except Exception:
 
 
 # Creating clusters
-if device == 'cuda':
-    cluster, client = grid_search.load_cluster()
+if __name__ == '__main__':
+    if device == 'cuda':
+        cluster, client = grid_search.load_cluster()
 
 
 # Argument Parsing
@@ -174,14 +174,19 @@ del Mapper
 
 
 # Creating final df list
-FinalFeatures = FinalColsNum + ['MARITALSTATUS', 'EDUCATION', 'GENDER', 'last_prod_enq2', 'first_prod_enq2', 'Approved_Flag']
+FinalFeatures = FinalColsNum + ['MARITALSTATUS',
+                                'EDUCATION',
+                                'GENDER',
+                                'last_prod_enq2',
+                                'first_prod_enq2',
+                                'Approved_Flag']
 df = df[:, FinalFeatures]
 
 del FinalFeatures
 
 
 # One hot encoding
-OneHotCols = ['MARITALSTATUS','GENDER', 'last_prod_enq2', 'first_prod_enq2']
+OneHotCols = ['MARITALSTATUS', 'GENDER', 'last_prod_enq2', 'first_prod_enq2']
 df = df.to_dummies(columns=OneHotCols)
 print(df)
 
