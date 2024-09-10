@@ -134,7 +134,7 @@ UniqueItems = GrpDf[:, 'Approved_Flag'].to_list()
 FinalColsNum = []
 print(UniqueItems)
 for i in ColKept:
-    GrpPs = {} 
+    GrpPs = {}
     for NumFlag in range(len(UniqueItems)):
         GrpPs[UniqueItems[NumFlag]] = GrpDf[NumFlag, i].to_list()
 
@@ -300,9 +300,8 @@ LGBParams = {
         'num_class': 4
         }
 
-LgbmDataset = lgb.Dataset(x_train, label=y_train)
-LgbmClassifier = lgb.train(LGBParams,
-                           LgbmDataset)
+LgbmClassifier = lgb.LGBMClassifier(objective='multiclass',
+                                    random_state=1337)
 
 y_pred = LgbmClassifier.predict(x_test)
 y_pred = np.argmax(y_pred, axis=1)
@@ -358,7 +357,7 @@ for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
 
 
 # Loading cluster for parallel computing
-if device=='cuda':
+if device == 'cuda':
     cluster, client = grid_search.load_cluster()
 
     x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
