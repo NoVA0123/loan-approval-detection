@@ -56,7 +56,9 @@ def train(client,
     del i
 
     # Joining both dataframes
-    df = df1.join(df2, how='inner', left_on='PROSPECTID', right_on='PROSPECTID')
+    df = df1.join(df2, how='inner',
+                  left_on='PROSPECTID',
+                  right_on='PROSPECTID')
     print(df[:5])
     print(df.shape)
 
@@ -65,7 +67,6 @@ def train(client,
 
     # checking contingency of categorical variable with our target variable
     CheckCols = df2.select([pl.col(pl.String)]).columns[:-1]
-
 
     def pivot_creator(Index: str,
                       DataFrame: pl.DataFrame = df) -> list:
@@ -347,7 +348,8 @@ def train(client,
             }
 
     if device == "cuda":
-        DistXgbEsti = grid_search.dask_xgboost(client)
+        DistXgbEsti = grid_search.dask_xgboost(client,
+                                               device)
     else:
         DistXgbEsti = XGBClassifier(objective='multi:softmax',
                                     num_class=4,

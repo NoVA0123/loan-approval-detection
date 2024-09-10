@@ -28,11 +28,13 @@ def data_converter_dask(x_train: np.array,
     return x_train, x_test, y_train, y_test
 
 
-def dask_xgboost(client: Client):
+def dask_xgboost(client: Client,
+                 device: str):
 
     estimator = DaskXGBClassifier(objective='multi:softmax',
                                   num_class=4,
-                                  tree_method='gpu_hist',
+                                  tree_method='hist',
+                                  device=device,
                                   random_state=1337)
     estimator.client = client
     return estimator
