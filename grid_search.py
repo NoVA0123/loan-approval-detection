@@ -63,7 +63,7 @@ def gridsearch(x_train: da,
                client):
 
     GridSearch = GridSearchCV(estimator,
-                              parameters=ParamGrid,
+                              param_grid=ParamGrid,
                               scoring='accuracy',
                               cv=5,
                               scheduler=client)
