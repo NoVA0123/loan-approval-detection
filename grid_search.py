@@ -4,7 +4,7 @@ from lightgbm import DaskLGBMClassifier
 from dask.distributed import Client, LocalCluster
 from dask_cuda import LocalCUDACluster
 import numpy as np
-from dask_ml.model_selection import IncrementalSearchCV 
+from dask_ml.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
@@ -62,12 +62,11 @@ def gridsearch(x_train: da,
                ParamGrid: dict,
                client):
 
-    GridSearch = IncrementalSearchCV(estimator,
-                                     parameters=ParamGrid,
-                                     scoring='accuracy',
-                                     cv=5,
-                                     verbose=3,
-                                     client=client)
+    GridSearch = GridSearchCV(estimator,
+                              parameters=ParamGrid,
+                              scoring='accuracy',
+                              cv=5,
+                              scheduler=client)
 
     GridSearch.fit(x_train, y_train)
     y_pred = GridSearch.predict(x_test)
