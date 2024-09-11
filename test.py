@@ -376,27 +376,13 @@ def train(client,
             }
 
     DistLgbmEsti = grid_search.dask_lgbm(client)
-    DistGridLgbm = dgsc(DistLgbmEsti,
-                        ParamGridLGBM,
-                        scoring='accuracy',
-                        cv=5,
-                        return_train_score=True,
-                        scheduler=client)
-
-    tqdm(DistGridLgbm.fit(x_train, y_train))
-    y_pred = DistGridLgbm.predict(x_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f'\nAccuracy: {accuracy: .7f}')
-
-    precision, recall, F1Score, _ = precision_recall_fscore_support(y_test,
-                                                                    y_pred)
-
-    for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
-        print(f"Class {v}")
-        print(f"Precision: {precision[i]: .7f}")
-        print(f"Recall: {recall[i]: .7f}")
-        print(f"F1 Score: {F1Score[i]: .7f}")
-
+    DistGridLgbm = grid_search.gridsearch(x_train,
+                                          x_test,
+                                          y_train,
+                                          y_test,
+                                          DistLgbmEsti,
+                                          ParamGridLGBM,
+                                          client)
 
 # Creating clusters
 if __name__ == '__main__':

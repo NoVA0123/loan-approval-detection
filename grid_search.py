@@ -4,8 +4,9 @@ from lightgbm import DaskLGBMClassifier
 from dask.distributed import Client, LocalCluster
 from dask_cuda import LocalCUDACluster
 import numpy as np
-from sklearn.model_selection import GridSearchCV
+from dask_ml.model_selection import GridSearchCV as dgsc
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from tqdm.auto import tqdm
 
 
 def load_cluster(device: str):
@@ -49,9 +50,8 @@ def dask_xgboost(client: Client,
 def dask_lgbm(client: Client) -> DaskLGBMClassifier:
 
     estimator = DaskLGBMClassifier(objective='multiclass',
-                                   tree_learner='data_parallel',
-                                   random_state=1337)
-    estimator.set_params(client=client)
+                                   random_state=1337,
+                                   client=client)
     return estimator
 
 
@@ -60,13 +60,15 @@ def gridsearch(x_train: da,
                y_train: da,
                y_test: da,
                estimator,
-               ParamGrid: dict):
+               ParamGrid: dict,
+               client):
 
-    GridSearch = GridSearchCV(estimator,
-                              param_grid=ParamGrid,
-                              scoring='accuracy',
-                              cv=5,
-                              verbose=3)
+    GridSearch = tqdm(dgsc(estimator,
+                      param_grid=ParamGrid,
+                      scoring='accuracy',
+                      cv=5,
+                      verbose=3,
+                      client=client))
 
     GridSearch.fit(x_train, y_train)
     y_pred = GridSearch.predict(x_test)
