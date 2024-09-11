@@ -12,8 +12,7 @@ from sklearn.metrics import (accuracy_score,
 from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
 import lightgbm as lgb
-from xgboost import XGBClassifier
-import subprocess
+from xgboost import XGBClassifier import subprocess
 from argparse import ArgumentParser
 import warnings
 warnings.filterwarnings('ignore')
@@ -337,7 +336,6 @@ def train(client,
                                                                        x_test,
                                                                        y_train,
                                                                        y_test)
-    '''
     # XGBOOST
     print('\nGRID SEARCH ON XGBOOST')
     ParamGridXGB = {
@@ -361,8 +359,8 @@ def train(client,
                                            y_train,
                                            y_test,
                                            DistXgbEsti,
-                                           ParamGrid=ParamGridXGB)
-    '''
+                                           ParamGrid=ParamGridXGB,
+                                           client=client)
     # LightGBM param grid has only one change:
     # alpha -> reg_alpha
     print('\nGRID SEARCH ON LIGHTGBM')
