@@ -376,7 +376,10 @@ def train(client,
 
     DistLgbmEsti = grid_search.dask_lgbm(client)
     DistGridLgbm = dgsc(DistLgbmEsti,
-                        ParamGridLGBM)
+                        ParamGridLGBM,
+                        scoring='accuracy',
+                        cv=5,
+                        return_train_score=True)
 
     DistGridLgbm.fit(x_train, y_train)
     y_pred = DistGridLgbm.predict(x_test)
