@@ -63,7 +63,7 @@ def gridsearch(x_train: da,
                client):
 
     GridSearch = IncrementalSearchCV(estimator,
-                                     param_grid=ParamGrid,
+                                     parameters=ParamGrid,
                                      scoring='accuracy',
                                      cv=5,
                                      verbose=3,
