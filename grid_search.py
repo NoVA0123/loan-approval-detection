@@ -12,9 +12,11 @@ def load_cluster(device: str):
     if device == 'cuda':
         cluster = LocalCUDACluster()
         client = Client(cluster)
+        print(device)
     else:
         cluster = LocalCluster()
         client = cluster.get_client()
+        print(device)
 
     return cluster, client
 

@@ -1,4 +1,5 @@
 import grid_search
+from tqdm.auto import tqdm
 import polars as pl
 import polars.selectors as cs
 from scipy.stats import chi2_contingency, f_oneway
@@ -382,7 +383,7 @@ def train(client,
                         return_train_score=True,
                         scheduler=client)
 
-    DistGridLgbm.fit(x_train, y_train)
+    tqdm(DistGridLgbm.fit(x_train, y_train))
     y_pred = DistGridLgbm.predict(x_test)
     accuracy = accuracy_score(y_test, y_pred)
     print(f'\nAccuracy: {accuracy: .7f}')
