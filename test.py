@@ -12,6 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
 import lightgbm as lgb
 from xgboost import XGBClassifier
+from dask_ml.model_selection import GridSearchCV as dgsc
 import subprocess
 from argparse import ArgumentParser
 import warnings
@@ -169,7 +170,8 @@ def train(client,
 
     del OneHotCols
 
-    '''Preparing models'''
+    
+    """Preparing models"""
     # Splitting the data
     y = df[:, 'Approved_Flag']
     x = df.drop('Approved_Flag')
@@ -178,7 +180,7 @@ def train(client,
                                                         y,
                                                         test_size=0.2,
                                                         random_state=1337)
-
+    '''
     # Random Forest model
     print("RANDOM FOREST")
     RfClassifier = RandomForestClassifier(n_estimators=200,
@@ -222,7 +224,7 @@ def train(client,
     print("\nXTREME GRADIENT BOOSTING")
     XgbClassifier = XGBClassifier(objective='multi:softmax',
                                   num_class=4,
-                                  random_state=1337)
+                                  random_state=1337)'''
     LabelEnc = LabelEncoder()
     x = x.to_numpy()
     y_encoded = LabelEnc.fit_transform(y)
@@ -231,7 +233,7 @@ def train(client,
                                                         y_encoded,
                                                         test_size=0.2,
                                                         random_state=1337)
-
+    '''
     XgbClassifier.fit(x_train, y_train)
     y_pred = XgbClassifier.predict(x_test)
 
@@ -248,7 +250,7 @@ def train(client,
         print(f"F1 Score: {F1Score[i]: .7f}")
 
 
-# Catboost classifier
+    # Catboost classifier
     print("\nCATBOOST CLASSIFIER")
     if device == 'cuda':
         task_type = 'GPU'
@@ -329,14 +331,13 @@ def train(client,
         print(f"Precision: {precision[i]: .7f}")
         print(f"Recall: {recall[i]: .7f}")
         print(f"F1 Score: {F1Score[i]: .7f}")
-
+    '''
     # Loading cluster for parallel computing
-    if device == 'cuda':
-        x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
-                                                                           x_test,
-                                                                           y_train,
-                                                                           y_test)
-
+    x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
+                                                                       x_test,
+                                                                       y_train,
+                                                                       y_test)
+    '''
     # XGBOOST
     print('\nGRID SEARCH ON XGBOOST')
     ParamGridXGB = {
@@ -361,7 +362,7 @@ def train(client,
                                            y_test,
                                            DistXgbEsti,
                                            ParamGrid=ParamGridXGB)
-
+    '''
     # LightGBM param grid has only one change:
     # alpha -> reg_alpha
     print('\nGRID SEARCH ON LIGHTGBM')
@@ -373,23 +374,28 @@ def train(client,
             'n_estimators': [10, 50, 100]
             }
 
-    if device == 'cuda':
-        DistLgbmEsti = grid_search.dask_lgbm(client)
-    else:
-        estimator = lgb.LGBMClassifier(objective='multiclass',
-                                       random_state=1337)
-    LgbmGridSearch = grid_search.gridsearch(x_train,
-                                            x_test,
-                                            y_train,
-                                            y_test,
-                                            DistLgbmEsti,
-                                            ParamGrid=ParamGridLGBM)
+    DistLgbmEsti = grid_search.dask_lgbm(client)
+    DistGridLgbm = dgsc(DistLgbmEsti,
+                        ParamGridLGBM)
+
+    DistGridLgbm.fit(x_train, y_train)
+    y_pred = DistGridLgbm.predict(x_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f'\nAccuracy: {accuracy: .7f}')
+
+    precision, recall, F1Score, _ = precision_recall_fscore_support(y_test,
+                                                                    y_pred)
+
+    for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
+        print(f"Class {v}")
+        print(f"Precision: {precision[i]: .7f}")
+        print(f"Recall: {recall[i]: .7f}")
+        print(f"F1 Score: {F1Score[i]: .7f}")
 
 
 # Creating clusters
 if __name__ == '__main__':
-    if device == 'cuda':
-        cluster, client = grid_search.load_cluster()
+    cluster, client = grid_search.load_cluster(device)
 
     # Argument Parsing
     parser = ArgumentParser()

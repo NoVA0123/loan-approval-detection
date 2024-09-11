@@ -1,16 +1,20 @@
 import dask.array as da
 from xgboost.dask import DaskXGBClassifier
 from lightgbm import DaskLGBMClassifier
-from dask.distributed import Client
+from dask.distributed import Client, LocalCluster
 from dask_cuda import LocalCUDACluster
 import numpy as np
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
-def load_cluster():
-    cluster = LocalCUDACluster()
-    client = Client(cluster)
+def load_cluster(device: str):
+    if device == 'cuda':
+        cluster = LocalCUDACluster()
+        client = Client(cluster)
+    else:
+        cluster = LocalCluster()
+        client = cluster.get_client()
 
     return cluster, client
 
@@ -43,6 +47,7 @@ def dask_xgboost(client: Client,
 def dask_lgbm(client: Client) -> DaskLGBMClassifier:
 
     estimator = DaskLGBMClassifier(objective='multiclass',
+                                   tree_learner='data_parallel',
                                    random_state=1337)
     estimator.set_params(client=client)
     return estimator
