@@ -11,8 +11,6 @@ from sklearn.metrics import (accuracy_score,
                              precision_recall_fscore_support)
 from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
-import lightgbm as lgb
-from xgboost import XGBClassifier
 import subprocess
 from argparse import ArgumentParser
 import warnings
@@ -219,8 +217,6 @@ def train(client,
         print(f"F1 Score: {F1Score[i]: .7f}")
 
     # Encoding labels for gradient boosters
-    print("\nXTREME GRADIENT BOOSTING")
-    XgbClassifier = grid_search.dask_xgboost(client, device)
     LabelEnc = LabelEncoder()
     x = x.to_numpy()
     y_encoded = LabelEnc.fit_transform(y)
@@ -229,20 +225,6 @@ def train(client,
                                                         y_encoded,
                                                         test_size=0.2,
                                                         random_state=1337)
-    XgbClassifier.fit(x_train, y_train)
-    y_pred = XgbClassifier.predict(x_test)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f'\nAccuracy: {accuracy: .7f}')
-
-    precision, recall, F1Score, _ = precision_recall_fscore_support(y_test,
-                                                                    y_pred)
-
-    for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
-        print(f"Class {v}")
-        print(f"Precision: {precision[i]: .7f}")
-        print(f"Recall: {recall[i]: .7f}")
-        print(f"F1 Score: {F1Score[i]: .7f}")
 
     # Catboost classifier
     print("\nCATBOOST CLASSIFIER")
@@ -273,7 +255,11 @@ def train(client,
 
     # Light GBM Classifier
     print("\nLIGHTGBM CLASSIFIER")
-    LgbmClassifier = grid_search.lgbm(device)
+    if device == 'cuda':
+        TmpDevice = 'gpu'
+    else:
+        TmpDevice = None
+    LgbmClassifier = grid_search.lgbm(TmpDevice)
     LgbmClassifier.fit(x_train, y_train)
 
     y_pred = LgbmClassifier.predict(x_test)
@@ -343,7 +329,7 @@ def train(client,
             'n_estimators': [10, 50, 100]
             }
 
-    DistLgbmEsti = grid_search.lgbm(device)
+    DistLgbmEsti = grid_search.lgbm(TmpDevice)
     DistLgbmGrid = grid_search.gridsearch(x_train,
                                           x_test,
                                           y_train,
@@ -351,7 +337,26 @@ def train(client,
                                           DistLgbmEsti,
                                           ParamGridLGBM,
                                           client)
+
     # XGBOOST
+    print("\nXTREME GRADIENT BOOSTING")
+    XgbClassifier = grid_search.dask_xgboost(client, device)
+
+    XgbClassifier.fit(x_train, y_train)
+    y_pred = XgbClassifier.predict(x_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f'\nAccuracy: {accuracy: .7f}')
+
+    precision, recall, F1Score, _ = precision_recall_fscore_support(y_test,
+                                                                    y_pred)
+
+    for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
+        print(f"Class {v}")
+        print(f"Precision: {precision[i]: .7f}")
+        print(f"Recall: {recall[i]: .7f}")
+        print(f"F1 Score: {F1Score[i]: .7f}")
+
     print('\nGRID SEARCH ON XGBOOST')
     ParamGridXGB = {
             'colsample_bytree': [0.1, 0.3, 0.5, 0.7, 0.9],
