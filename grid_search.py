@@ -63,12 +63,12 @@ def gridsearch(x_train: da,
                ParamGrid: dict,
                client):
 
-    GridSearch = tqdm(dgsc(estimator,
-                      param_grid=ParamGrid,
+    GridSearch = dgsc(estimator,
+                      parameters=ParamGrid,
                       scoring='accuracy',
                       cv=5,
                       verbose=3,
-                      client=client))
+                      client=client)
 
     GridSearch.fit(x_train, y_train)
     y_pred = GridSearch.predict(x_test)
