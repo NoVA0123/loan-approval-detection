@@ -64,7 +64,7 @@ def gridsearch(x_train: da,
                client):
 
     GridSearch = dgsc(estimator,
-                      parameters=ParamGrid,
+                      param_grid=ParamGrid,
                       scoring='accuracy',
                       cv=5,
                       verbose=3,
