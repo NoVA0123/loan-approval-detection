@@ -13,3 +13,4 @@ lightgbm
 statsmodels
 fastexcel
 dask[complete]
+dask-ml
