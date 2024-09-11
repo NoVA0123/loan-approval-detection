@@ -1,10 +1,10 @@
 import dask.array as da
 from xgboost.dask import DaskXGBClassifier
-from lightgbm import DaskLGBMClassifier
+from lightgbm import LGBMClassifier
 from dask.distributed import Client, LocalCluster
 from dask_cuda import LocalCUDACluster
 import numpy as np
-from dask_ml.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
@@ -46,10 +46,11 @@ def dask_xgboost(client: Client,
     return estimator
 
 
-def dask_lgbm(client: Client) -> DaskLGBMClassifier:
+def lgbm(device: str) -> LGBMClassifier:
 
-    estimator = DaskLGBMClassifier(objective='multiclass',
-                                   random_state=1337)
+    estimator = LGBMClassifier(objective='multiclass',
+                               device=device,
+                               random_state=1337)
     return estimator
 
 
@@ -58,14 +59,13 @@ def gridsearch(x_train: da,
                y_train: da,
                y_test: da,
                estimator,
-               ParamGrid: dict,
-               client):
+               ParamGrid: dict):
 
     GridSearch = GridSearchCV(estimator,
                               param_grid=ParamGrid,
                               scoring='accuracy',
                               cv=5,
-                              scheduler=client)
+                              verbose=3)
 
     GridSearch.fit(x_train, y_train)
     y_pred = GridSearch.predict(x_test)

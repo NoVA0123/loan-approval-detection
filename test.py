@@ -170,7 +170,6 @@ def train(client,
 
     del OneHotCols
 
-    
     """Preparing models"""
     # Splitting the data
     y = df[:, 'Approved_Flag']
@@ -180,7 +179,6 @@ def train(client,
                                                         y,
                                                         test_size=0.2,
                                                         random_state=1337)
-    '''
     # Random Forest model
     print("RANDOM FOREST")
     RfClassifier = RandomForestClassifier(n_estimators=200,
@@ -222,9 +220,7 @@ def train(client,
 
     # Encoding labels for gradient boosters
     print("\nXTREME GRADIENT BOOSTING")
-    XgbClassifier = XGBClassifier(objective='multi:softmax',
-                                  num_class=4,
-                                  random_state=1337)'''
+    XgbClassifier = grid_search.dask_xgboost(client, device)
     LabelEnc = LabelEncoder()
     x = x.to_numpy()
     y_encoded = LabelEnc.fit_transform(y)
@@ -233,7 +229,6 @@ def train(client,
                                                         y_encoded,
                                                         test_size=0.2,
                                                         random_state=1337)
-    '''
     XgbClassifier.fit(x_train, y_train)
     y_pred = XgbClassifier.predict(x_test)
 
@@ -248,7 +243,6 @@ def train(client,
         print(f"Precision: {precision[i]: .7f}")
         print(f"Recall: {recall[i]: .7f}")
         print(f"F1 Score: {F1Score[i]: .7f}")
-
 
     # Catboost classifier
     print("\nCATBOOST CLASSIFIER")
@@ -279,8 +273,7 @@ def train(client,
 
     # Light GBM Classifier
     print("\nLIGHTGBM CLASSIFIER")
-    LgbmClassifier = lgb.LGBMClassifier(objective='multiclass',
-                                        random_state=1337)
+    LgbmClassifier = grid_search.lgbm(device)
     LgbmClassifier.fit(x_train, y_train)
 
     y_pred = LgbmClassifier.predict(x_test)
@@ -331,37 +324,14 @@ def train(client,
         print(f"Precision: {precision[i]: .7f}")
         print(f"Recall: {recall[i]: .7f}")
         print(f"F1 Score: {F1Score[i]: .7f}")
-    '''
+
     # Loading cluster for parallel computing
     x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
                                                                        x_test,
                                                                        y_train,
                                                                        y_test)
-    # XGBOOST
-    print('\nGRID SEARCH ON XGBOOST')
-    ParamGridXGB = {
-            'colsample_bytree': [0.1, 0.3, 0.5, 0.7, 0.9],
-            'learning_rate': [0.001, 0.01, 0.1, 1],
-            'max_depth': [3, 5, 8, 10],
-            'alpha': [1, 10, 100],
-            'n_estimators': [10, 50, 100]
-            }
 
-    if device == "cuda":
-        DistXgbEsti = grid_search.dask_xgboost(client,
-                                               device)
-    else:
-        DistXgbEsti = XGBClassifier(objective='multi:softmax',
-                                    num_class=4,
-                                    random_state=1337)
-
-    XgbGridSearch = grid_search.gridsearch(x_train,
-                                           x_test,
-                                           y_train,
-                                           y_test,
-                                           DistXgbEsti,
-                                           ParamGrid=ParamGridXGB,
-                                           client=client)
+    # LGBM Grid search
     # LightGBM param grid has only one change:
     # alpha -> reg_alpha
     print('\nGRID SEARCH ON LIGHTGBM')
@@ -373,7 +343,7 @@ def train(client,
             'n_estimators': [10, 50, 100]
             }
 
-    DistLgbmEsti = grid_search.dask_lgbm(client)
+    DistLgbmEsti = grid_search.lgbm(device)
     DistLgbmGrid = grid_search.gridsearch(x_train,
                                           x_test,
                                           y_train,
@@ -381,22 +351,26 @@ def train(client,
                                           DistLgbmEsti,
                                           ParamGridLGBM,
                                           client)
-    '''
-    DistLgbmEsti.fit(x_train, y_train)
-    y_pred = DistLgbmEsti.predict(x_test)
+    # XGBOOST
+    print('\nGRID SEARCH ON XGBOOST')
+    ParamGridXGB = {
+            'colsample_bytree': [0.1, 0.3, 0.5, 0.7, 0.9],
+            'learning_rate': [0.001, 0.01, 0.1, 1],
+            'max_depth': [3, 5, 8, 10],
+            'alpha': [1, 10, 100],
+            'n_estimators': [10, 50, 100]
+            }
 
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f'\nAccuracy: {accuracy: .7f}')
+    DistXgbEsti = grid_search.dask_xgboost(client,
+                                           device)
 
-    precision, recall, F1Score, _ = precision_recall_fscore_support(y_test,
-                                                                    y_pred)
-
-    for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
-        print(f"Class {v}")
-        print(f"Precision: {precision[i]: .7f}")
-        print(f"Recall: {recall[i]: .7f}")
-        print(f"F1 Score: {F1Score[i]: .7f}")
-    '''
+    XgbGridSearch = grid_search.gridsearch(x_train,
+                                           x_test,
+                                           y_train,
+                                           y_test,
+                                           DistXgbEsti,
+                                           ParamGrid=ParamGridXGB,
+                                           client=client)
 
 
 # Creating clusters
