@@ -379,7 +379,8 @@ def train(client,
                         ParamGridLGBM,
                         scoring='accuracy',
                         cv=5,
-                        return_train_score=True)
+                        return_train_score=True,
+                        scheduler=client)
 
     DistGridLgbm.fit(x_train, y_train)
     y_pred = DistGridLgbm.predict(x_test)
