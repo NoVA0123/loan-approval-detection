@@ -375,8 +375,17 @@ def train(client,
             }
 
     DistLgbmEsti = grid_search.dask_lgbm(client)
+    DistLgbmGrid = grid_search.gridsearch(x_train,
+                                          x_test,
+                                          y_train,
+                                          y_test,
+                                          DistLgbmEsti,
+                                          ParamGridLGBM,
+                                          client)
+    '''
     DistLgbmEsti.fit(x_train, y_train)
     y_pred = DistLgbmEsti.predict(x_test)
+
     accuracy = accuracy_score(y_test, y_pred)
     print(f'\nAccuracy: {accuracy: .7f}')
 
@@ -388,6 +397,7 @@ def train(client,
         print(f"Precision: {precision[i]: .7f}")
         print(f"Recall: {recall[i]: .7f}")
         print(f"F1 Score: {F1Score[i]: .7f}")
+    '''
 
 
 # Creating clusters

@@ -49,8 +49,7 @@ def dask_xgboost(client: Client,
 def dask_lgbm(client: Client) -> DaskLGBMClassifier:
 
     estimator = DaskLGBMClassifier(objective='multiclass',
-                                   random_state=1337,
-                                   client=client)
+                                   random_state=1337)
     return estimator
 
 
