@@ -10,9 +10,12 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import (accuracy_score,
                              precision_recall_fscore_support)
 from sklearn.preprocessing import LabelEncoder
+import lightgbm as lgb
+import xgboost as xgb
 from catboost import CatBoostClassifier
 import subprocess
 from argparse import ArgumentParser
+from time import sleep
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -276,6 +279,7 @@ def train(client,
         print(f"F1 Score: {F1Score[i]: .7f}")
 
     # Trying grid search on Xgboost, LightGBM and CatBoost
+    final_score = {}
     # CatBoost
     print('\nGRID SEARCH ON CATBOOST')
     ParamGridCBC = {
@@ -291,31 +295,12 @@ def train(client,
                                       random_state=1337,
                                       verbose=False)
 
-    CbcGridSearch = grid_search.gridsearch(x_train,
-                                           x_test,
-                                           y_train,
-                                           y_test,
-                                           CBClassifier,
-                                           ParamGrid=ParamGridCBC)
-
-    y_pred = CbcGridSearch.predict(x_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f'\nAccuracy: {accuracy: .7f}')
-
-    precision, recall, F1Score, _ = precision_recall_fscore_support(y_test,
-                                                                    y_pred)
-
-    for i, v in enumerate(['P1', 'P2', 'P3', 'P4']):
-        print(f"Class {v}")
-        print(f"Precision: {precision[i]: .7f}")
-        print(f"Recall: {recall[i]: .7f}")
-        print(f"F1 Score: {F1Score[i]: .7f}")
-
-    # Loading cluster for parallel computing
-    x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
-                                                                       x_test,
-                                                                       y_train,
-                                                                       y_test)
+    CbcGridSearch, final_score['lightgbm'] = grid_search.gridsearch(x_train,
+                                                                    x_test,
+                                                                    y_train,
+                                                                    y_test,
+                                                                    CBClassifier,
+                                                                    ParamGrid=ParamGridCBC)
 
     # LGBM Grid search
     # LightGBM param grid has only one change:
@@ -330,14 +315,20 @@ def train(client,
             }
 
     DistLgbmEsti = grid_search.lgbm(TmpDevice)
-    DistLgbmGrid = grid_search.gridsearch(x_train,
-                                          x_test,
-                                          y_train,
-                                          y_test,
-                                          DistLgbmEsti,
-                                          ParamGridLGBM)
+    DistLgbmGrid, final_score['lightgbm'] = grid_search.gridsearch(x_train,
+                                                                   x_test,
+                                                                   y_train,
+                                                                   y_test,
+                                                                   DistLgbmEsti,
+                                                                   ParamGridLGBM)
 
     # XGBOOST
+
+    # Converting data for parallel computing
+    x_train, x_test, y_train, y_test = grid_search.data_converter_dask(x_train,
+                                                                       x_test,
+                                                                       y_train,
+                                                                       y_test)
     print("\nXTREME GRADIENT BOOSTING")
     XgbClassifier = grid_search.dask_xgboost(client, device)
 
@@ -368,12 +359,52 @@ def train(client,
     DistXgbEsti = grid_search.dask_xgboost(client,
                                            device)
 
-    XgbGridSearch = grid_search.gridsearch(x_train,
-                                           x_test,
-                                           y_train,
-                                           y_test,
-                                           DistXgbEsti,
-                                           ParamGrid=ParamGridXGB)
+    XgbGridSearch, final_score['xgboost'] = grid_search.gridsearch(x_train,
+                                                                   x_test,
+                                                                   y_train,
+                                                                   y_test,
+                                                                   DistXgbEsti,
+                                                                   ParamGrid=ParamGridXGB)
+    #  finding the best model
+    x_train, x_test, y_train, y_test = train_test_split(x,
+                                                        y_encoded,
+                                                        test_size=0.2,
+                                                        random_state=1337)
+    MaxScore = max(final_score.values())
+    if final_score['catboost'] == MaxScore:
+        BestParameters = CbcGridSearch.best_params_()
+        print(BestParameters)
+        CBClassifier = CatBoostClassifier(BestParameters,
+                                          objective='MultiClass',
+                                          task_type=task_type,
+                                          devices='0',
+                                          random_state=1337,
+                                          verbose=False)
+        CBClassifier.fit(x_train, y_train)
+        CBClassifier.save_model('cb_loan_fraud',
+                                format='cbm',
+                                export_parameters=dict)
+
+    elif final_score['lightgbm'] == MaxScore:
+        BestParameters = DistLgbmGrid.best_params_()
+        print(BestParameters)
+        LgbmClassifier = lgb.LGBMClassifier(BestParameters,
+                                            objective='multiclass',
+                                            device=device,
+                                            random_state=1337)
+        LgbmClassifier.fit(x_train, y_train)
+        LgbmClassifier.booster_.save_model('lgbm_loan_fraud.txt')
+
+    elif final_score['xgboost'] == MaxScore:
+        BestParameters = XgbGridSearch.best_params_()
+        print(BestParameters)
+        XgbClassifier = xgb.XGBClassifier(objective='multi:softmax',
+                                          num_class=4,
+                                          tree_method='hist',
+                                          device=device,
+                                          random_state=1337)
+        XgbClassifier.fit(x_train, y_train)
+        XgbClassifier.save_model("xgb_loan_fraud.txt")
 
 
 # Creating clusters

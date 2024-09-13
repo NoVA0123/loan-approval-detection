@@ -81,4 +81,4 @@ def gridsearch(x_train: da,
         print(f"Precision: {precision[i]: .7f}")
         print(f"Recall: {recall[i]: .7f}")
         print(f"F1 Score: {F1Score[i]: .7f}")
-    return GridSearch
+    return GridSearch, accuracy
