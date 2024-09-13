@@ -335,8 +335,7 @@ def train(client,
                                           y_train,
                                           y_test,
                                           DistLgbmEsti,
-                                          ParamGridLGBM,
-                                          client)
+                                          ParamGridLGBM)
 
     # XGBOOST
     print("\nXTREME GRADIENT BOOSTING")
@@ -374,8 +373,7 @@ def train(client,
                                            y_train,
                                            y_test,
                                            DistXgbEsti,
-                                           ParamGrid=ParamGridXGB,
-                                           client=client)
+                                           ParamGrid=ParamGridXGB)
 
 
 # Creating clusters
