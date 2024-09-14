@@ -15,9 +15,7 @@ import xgboost as xgb
 from catboost import CatBoostClassifier
 import subprocess
 from argparse import ArgumentParser
-from time import sleep
 import warnings
-warnings.filterwarnings('ignore')
 
 # Checking if GPU available or not
 try:
@@ -76,7 +74,7 @@ def train(client,
         CrossTab = DataFrame.pivot(on="Approved_Flag",
                                    index=Index,
                                    values="Approved_Flag",
-                                   aggregate_function='count')
+                                   aggregate_function='len')
         # Remove index and convert it into list
         CrossTab = CrossTab.to_numpy()[:, 1:].tolist()
         return CrossTab
@@ -409,6 +407,7 @@ def train(client,
 
 # Creating clusters
 if __name__ == '__main__':
+    warnings.filterwarnings('ignore', category=UserWarning)
     cluster, client = grid_search.load_cluster(device)
 
     # Argument Parsing

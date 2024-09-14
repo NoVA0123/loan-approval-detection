@@ -2,10 +2,20 @@ import dask.array as da
 from xgboost.dask import DaskXGBClassifier
 from lightgbm import LGBMClassifier
 from dask.distributed import Client, LocalCluster
-from dask_cuda import LocalCUDACluster
 import numpy as np
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+import warnings
+import subprocess
+try:
+    subprocess.check_output('nvidia-smi')
+    device = 'cuda'
+except Exception:
+    device = 'cpu'
+if device == 'cuda':
+    from dask_cuda import LocalCUDACluster
+
+warnings.filterwarnings('ignore', category=UserWarning)
 
 
 def load_cluster(device: str):
@@ -50,7 +60,8 @@ def lgbm(device: str) -> LGBMClassifier:
 
     estimator = LGBMClassifier(objective='multiclass',
                                device=device,
-                               random_state=1337)
+                               random_state=1337,
+                               verbosity=-1)
     return estimator
 
 
@@ -64,8 +75,7 @@ def gridsearch(x_train: da,
     GridSearch = GridSearchCV(estimator,
                               param_grid=ParamGrid,
                               scoring='accuracy',
-                              cv=5,
-                              verbose=3)
+                              cv=5)
 
     GridSearch.fit(x_train, y_train)
     y_pred = GridSearch.predict(x_test)
