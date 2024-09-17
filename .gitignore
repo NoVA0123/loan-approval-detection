@@ -1,1 +1,5 @@
 catboost_info
+.mypy_cache
+__pychache__
+test.py
+grid_search.py

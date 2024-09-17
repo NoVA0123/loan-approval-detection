@@ -65,6 +65,7 @@ def train(client,
     # Checking Null values
     # print(df.null_count().sum_horizontal())
 
+
     # checking contingency of categorical variable with our target variable
     CheckCols = df2.select([pl.col(pl.String)]).columns[:-1]
 
@@ -79,8 +80,6 @@ def train(client,
         CrossTab = CrossTab.to_numpy()[:, 1:].tolist()
         return CrossTab
 
-    # print(CheckCols)
-
     for i in CheckCols:
         chi2, pval, _, _ = chi2_contingency(pivot_creator(i))
 
@@ -88,6 +87,19 @@ def train(client,
     del df2
     del i
     del CheckCols
+
+    # print(CheckCols)
+    # checking contingency of categorical variable with our target variable
+    CheckCols = df.select([pl.col(pl.String)]).columns[:-1]
+    ColsToRmv = []
+
+    for i in tqdm(CheckCols):
+        chi2, pval, _, _ = chi2_contingency(pivot_creator(i, df))
+        if pval <= 0.05:
+            ColsToRmv.append(i)
+
+    df = df.drop(ColsToRmv)
+    return df
 
     # VIF sequential check
     VifData = df.select([cs.integer(), cs.float()])
@@ -105,12 +117,6 @@ def train(client,
         else:
             VifData = VifData.drop(i)
 
-    print(ColKept)
-
-    del ColIndex
-    del VifData
-    del VifValue
-
     # Checking Anova for columns to be kept
     GrpDf = df.group_by('Approved_Flag').all()
     UniqueItems = GrpDf[:, 'Approved_Flag'].to_list()
@@ -124,10 +130,6 @@ def train(client,
         FStatistic, Pval = f_oneway(*GrpPs.values())
         if Pval <= 0.5:
             FinalColsNum.append(i)
-
-    del UniqueItems
-    del GrpDf
-    del ColKept
 
     # Treating categorical variables
     '''print(df['MARITALSTATUS'].unique())
