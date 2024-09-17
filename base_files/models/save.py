@@ -1,17 +1,14 @@
 from base_files.models.catboost_classifier import cb_classifier
 from base_files.models.lgb_classifier import lgbm
 from base_files.models.xgboost_classifier import xgboost_initializer
-import dask
-import numpy as np
-import polars as pl
 import pickle
 
 
 def model_save(estimator,
                ModelName: str,
                device: str,
-               x_train: list | np.array | pl.DataFrame | dask.array,
-               y_train: list | np.array | pl.DataFrame | dask.array,
+               x_train,
+               y_train,
                RandomState: int = 1337):
     if ModelName == 'random_forest':
         BestEsti = estimator.best_estimator_

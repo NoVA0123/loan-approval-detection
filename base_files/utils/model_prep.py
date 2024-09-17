@@ -1,11 +1,9 @@
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import polars as pl
-import numpy as np
 
 
-def split_data(TrainData: pl.Dataframe | np.array | list,
-               LabelData: pl.Dataframe | np.array | list,
+def split_data(TrainData,
+               LabelData,
                TestSize: float = 0.2,
                RandomState: int = 1337):
 

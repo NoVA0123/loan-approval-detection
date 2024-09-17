@@ -4,15 +4,12 @@ from base_files.models.lgb_classifier import lgbm
 from base_files.models.xgboost_classifier import xgboost_initializer
 from base_files.models.tree_classifier import rf_classifer, dt_classifer
 from sklearn.model_selection import GridSearchCV
-import polars as pl
-import numpy as np
-import dask
 
 
-def gridsearch(x_train: pl.DataFrame | np.array | list | dask.array,
-               x_test: pl.DataFrame | np.array | list | dask.array,
-               y_train: pl.DataFrame | np.array | list | dask.array,
-               y_test: pl.DataFrame | np.array | list | dask.array,
+def gridsearch(x_train,
+               x_test,
+               y_train,
+               y_test,
                estimator,
                ParamGrid: dict):
 
