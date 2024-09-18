@@ -16,7 +16,7 @@ def gridsearch(x_train,
     GridSearch = GridSearchCV(estimator,
                               param_grid=ParamGrid,
                               scoring='accuracy',
-                              cv=5)
+                              cv=3)
 
     GridSearch.fit(x_train, y_train)
 
@@ -85,6 +85,7 @@ def filter_model(ModelName: str,
                                           y_test,
                                           estimator,
                                           param_grid)
+
     elif ModelName == "lightgbm":
         print("\nGRID SEARCH ON LIGHTGBM")
         param_grid = {
@@ -104,6 +105,7 @@ def filter_model(ModelName: str,
                                           y_test,
                                           estimator,
                                           param_grid)
+
     elif ModelName == "catboost":
         print("\nGRID SEARCH ON CATBOOST")
         param_grid = {
