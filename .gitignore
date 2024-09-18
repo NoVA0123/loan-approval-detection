@@ -3,3 +3,4 @@ catboost_info
 __pychache__
 test.py
 grid_search.py
+/base_files/models/__pychache__

@@ -6,6 +6,7 @@ def lgbm(device: str,
          RandomState: int = 1337,
          Verbosity: int = -1) -> LGBMClassifier:
 
+    device = 'cpu'
     estimator = LGBMClassifier(params,
                                objective='multiclass',
                                device=device,
