@@ -150,7 +150,7 @@ def train(client,
     # Applying gridsearch
     BestScore = 0
     for ModelName in FilteredModel:
-        if ModelName == 'xgboost':
+        '''if ModelName == 'xgboost':
             Model = filter_model(ModelName,
                                  da_x_train,
                                  da_x_test,
@@ -165,11 +165,19 @@ def train(client,
                                  y_train,
                                  y_test,
                                  device=device,
+                                 client=client)'''
+        if ModelName == 'lightgbm':
+            Model = filter_model(ModelName,
+                                 x_train,
+                                 x_test,
+                                 y_train,
+                                 y_test,
+                                 device=device,
                                  client=client)
 
-        if Model[1] > BestScore:
+        '''if Model[1] > BestScore:
             BestModelName = x
-            BestModel = Model[0]
+            BestModel = Model[0]'''
 
     return BestModelName, BestModel, x_train, y_train
 

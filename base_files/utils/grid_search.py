@@ -11,12 +11,14 @@ def gridsearch(x_train,
                y_train,
                y_test,
                estimator,
-               ParamGrid: dict):
+               ParamGrid: dict,
+               verbose: int = 0):
 
     GridSearch = GridSearchCV(estimator,
                               param_grid=ParamGrid,
                               scoring='accuracy',
-                              cv=3)
+                              cv=3,
+                              verbose=verbose)
 
     GridSearch.fit(x_train, y_train)
 
@@ -104,7 +106,9 @@ def filter_model(ModelName: str,
                                           y_train,
                                           y_test,
                                           estimator,
-                                          param_grid)
+                                          param_grid,
+                                          verbose=0)
+        print(GridSearch, Accuracy)
 
     elif ModelName == "catboost":
         print("\nGRID SEARCH ON CATBOOST")
