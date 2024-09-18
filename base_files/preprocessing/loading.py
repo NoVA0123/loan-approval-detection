@@ -14,7 +14,7 @@ def read_file(FilePath1: str,
     Threshold2 = os.path.getsize(FilePath2)
     TotalThreshold = Threshold1 + Threshold2
 
-    Available = psutil.virtual_memory().available()
+    Available = psutil.virtual_memory().available
 
     try:
         if TotalThreshold * 2 > Available:
@@ -36,9 +36,9 @@ def read_file(FilePath1: str,
             }
 
     for x in tqdm(Extensions.keys()):
-        if ExtName1 == x:
+        if ExtName1[1] == x:
             df1 = Extensions[x](FilePath1)
-        if ExtName2 == x:
+        if ExtName2[1] == x:
             df2 = Extensions[x](FilePath2)
 
     return df1, df2
@@ -48,32 +48,30 @@ def uint_casting(dataframe: pl.DataFrame,
                  cols: list) -> dict:
     tmp = {}
     for x in cols:
-        if dataframe[:, x].max < 2**8:
+        if dataframe[:, x].max() < 2**8:
             tmp[x] = pl.UInt8
-        elif dataframe[:, x].max < 2**16:
+        elif dataframe[:, x].max() < 2**16:
             tmp[x] = pl.UInt16
-        elif dataframe[:, x].max < 2**32:
+        elif dataframe[:, x].max() < 2**32:
             tmp[x] = pl.UInt32
         else:
             tmp[x] = pl.UInt64
-
-        return tmp
+    return tmp
 
 
 def int_casting(dataframe: pl.DataFrame,
                 cols: list) -> dict:
     tmp = {}
     for x in cols:
-        if dataframe[:, x].max < 2**7 and dataframe[:, x].min > -(2**7 + 1):
+        if dataframe[:, x].max() < 2**7 and dataframe[:, x].min() > -(2**7 + 1):
             tmp[x] = pl.Int8
-        if dataframe[:, x].max < 2**15 and dataframe[:, x].min > -(2**15 + 1):
+        if dataframe[:, x].max() < 2**15 and dataframe[:, x].min() > -(2**15 + 1):
             tmp[x] = pl.Int16
-        if dataframe[:, x].max < 2**31 and dataframe[:, x].min > -(2**31 + 1):
+        if dataframe[:, x].max() < 2**31 and dataframe[:, x].min() > -(2**31 + 1):
             tmp[x] = pl.Int32
         else:
             tmp[x] = pl.Int64
-
-        return tmp
+    return tmp
 
 
 def float_casting(cols: list) -> dict:
@@ -84,18 +82,27 @@ def float_casting(cols: list) -> dict:
 
 
 def digit_casting(df: pl.DataFrame,
-                  UintCols: dict,
-                  IntCols: dict,
-                  FloatCols: dict):
-    UintCasted = uint_casting(df,
-                              UintCols)
-    IntCasted = int_casting(df,
-                            IntCols)
-    FloatCasted = float_casting(FloatCols)
+                  UintCols: list,
+                  IntCols: list,
+                  FloatCols: list):
+    '''
+    if len(UintCols) > 0:
+        UintCasted = uint_casting(df,
+                                  UintCols)
+    else:
+        UintCasted = {None:None}'''
+    if len(IntCols) > 0:
+        IntCasted = int_casting(df,
+                                IntCols)
+    else:
+        IntCasted = {}
+    if len(FloatCols) > 0:
+        FloatCasted = float_casting(FloatCols)
+    else:
+        FloatCasted = {}
 
-    FinalMap = {**UintCasted,
-                **IntCasted,
-                **FloatCasted}
+    FinalMap = IntCasted
+    FinalMap.update(FloatCasted)
 
     return FinalMap
 

@@ -8,7 +8,6 @@ from base_files.models.xgboost_classifier import xgboost_initializer
 from base_files.models.tree_classifier import rf_classifer, dt_classifer
 from base_files.models.save import model_save
 from base_files.utils.check_score import accuracy
-from base_files.utils.clusters import load_cluster, data_converter_dask
 from base_files.utils.grid_search import filter_model
 from base_files.utils.model_prep import split_data
 from argparse import ArgumentParser
@@ -130,7 +129,7 @@ def train(client,
     LgbmClassifier = lgbm(device=device,
                           params=None,
                           RandomState=1337,
-                          verbose=False)
+                          Verbosity=-1)
     LgbmClassifier.fit(x_train, y_train)
     LGBMAccuracy = accuracy(LgbmClassifier,
                             x_test,
@@ -140,7 +139,7 @@ def train(client,
     del LGBMAccuracy
 
     # Filtering models for accuracy
-    FilterAcc = sum(ModelAccuracy.values()) - 0.2
+    FilterAcc = max(ModelAccuracy.values()) - 0.2
     FilteredModel = []
     for x in ModelAccuracy.keys():
         if ModelAccuracy[x] > FilterAcc:
@@ -156,7 +155,9 @@ def train(client,
                                   da_x_train,
                                   da_x_test,
                                   da_y_train,
-                                  da_y_test)]
+                                  da_y_test,
+                                  device=device,
+                                  client=client)]
         else:
             Model = [filter_model(ModelName,
                                   x_train,
@@ -175,8 +176,9 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=UserWarning)
     TotalGPUs = len(GPUtil.getAvailable())
     device = 'cuda'
-    cluster, client = None
+    cluster, client = None, None
     if TotalGPUs > 1:
+        from base_files.utils.clusters import load_cluster, data_converter_dask
         cluster, client = load_cluster()
         print('Using GPU clusters')
     if TotalGPUs == 1:

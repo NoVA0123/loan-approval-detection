@@ -25,7 +25,8 @@ def suitable_cat_col(df: pl.DataFrame):
 
     for i in tqdm(CheckCols):
         chi2, pval, _, _ = chi2_contingency(pivot_creator(i, df))
-        if pval <= 0.05:
+        if pval >= 0.05:
+            print(f"{i} will be removed")
             ColsToRmv.append(i)
 
     df = df.drop(ColsToRmv)
@@ -61,7 +62,7 @@ def suitable_num_cols(df: pl.DataFrame):
             GrpPs[UniqueItems[NumFlag]] = GrpDf[NumFlag, i].to_list()
 
         FStatistic, Pval = f_oneway(*GrpPs.values())
-        if Pval <= 0.5:
+        if Pval <= 0.05:
             FinalColsNum.append(i)
 
     return FinalColsNum

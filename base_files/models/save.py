@@ -35,7 +35,7 @@ def model_save(estimator,
         BestEsti = lgbm(device=device,
                         params=BestParams,
                         RandomState=RandomState,
-                        verbose=False)
+                        Verbosity=-1)
         BestEsti.fit(x_train, y_train)
         BestEsti.booster_.save_model('lgbm_loan_fraud.txt')
 

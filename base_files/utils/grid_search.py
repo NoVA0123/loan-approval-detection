@@ -100,7 +100,7 @@ def filter_model(ModelName: str,
         estimator = lgbm(device=device,
                          params=None,
                          RandomState=1337,
-                         Verbosity=False)
+                         Verbosity=-1)
         GridSearch, Accuracy = gridsearch(x_train,
                                           x_test,
                                           y_train,
