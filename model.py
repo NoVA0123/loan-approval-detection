@@ -151,19 +151,19 @@ def train(client,
     BestScore = 0
     for ModelName in FilteredModel:
         if ModelName == 'xgboost':
-            Model = [filter_model(ModelName,
-                                  da_x_train,
-                                  da_x_test,
-                                  da_y_train,
-                                  da_y_test,
-                                  device=device,
-                                  client=client)]
+            Model = filter_model(ModelName,
+                                 da_x_train,
+                                 da_x_test,
+                                 da_y_train,
+                                 da_y_test,
+                                 device=device,
+                                 client=client)
         else:
-            Model = [filter_model(ModelName,
-                                  x_train,
-                                  x_test,
-                                  y_train,
-                                  y_test)]
+            Model = filter_model(ModelName,
+                                 x_train,
+                                 x_test,
+                                 y_train,
+                                 y_test)
 
         if Model[1] > BestScore:
             BestModelName = x

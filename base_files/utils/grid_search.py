@@ -50,7 +50,6 @@ def filter_model(ModelName: str,
                                           y_test,
                                           estimator,
                                           param_grid)
-        return GridSearch, Accuracy
 
     elif ModelName == 'decision_tree':
         print("\nGRID SEARCH ON DECISION TREE")
@@ -65,7 +64,6 @@ def filter_model(ModelName: str,
                                           y_test,
                                           estimator,
                                           param_grid)
-        return GridSearch, Accuracy
 
     elif ModelName == 'xgboost':
         print("\nGRID SEARCH ON XGBOOST")
@@ -87,7 +85,6 @@ def filter_model(ModelName: str,
                                           y_test,
                                           estimator,
                                           param_grid)
-        return GridSearch, Accuracy
     elif ModelName == "lightgbm":
         print("\nGRID SEARCH ON LIGHTGBM")
         param_grid = {
@@ -107,7 +104,6 @@ def filter_model(ModelName: str,
                                           y_test,
                                           estimator,
                                           param_grid)
-        return GridSearch, Accuracy
     elif ModelName == "catboost":
         print("\nGRID SEARCH ON CATBOOST")
         param_grid = {
@@ -127,4 +123,4 @@ def filter_model(ModelName: str,
                                           y_test,
                                           estimator,
                                           param_grid)
-        return GridSearch, Accuracy
+    return [GridSearch, Accuracy]
