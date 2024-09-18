@@ -163,7 +163,9 @@ def train(client,
                                  x_train,
                                  x_test,
                                  y_train,
-                                 y_test)
+                                 y_test,
+                                 device=device,
+                                 client=client)
 
         if Model[1] > BestScore:
             BestModelName = x
