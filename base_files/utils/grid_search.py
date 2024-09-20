@@ -114,7 +114,6 @@ def filter_model(ModelName: str,
         case 'catboost':
             print("\nGRID SEARCH ON CATBOOST")
             param_grid = {
-                    'colsample_bylevel': [0.1, 0.3, 0.5, 0.7, 0.9],
                     'learning_rate': [0.001, 0.01, 0.1, 1],
                     'max_depth': [3, 5, 8, 10],
                     'reg_lambda': [1, 10, 100],
