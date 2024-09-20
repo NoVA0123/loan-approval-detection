@@ -215,6 +215,7 @@ if __name__ == '__main__':
 
     a = model_save(estimator=BestModel,
                    ModelName=BestModelName,
+                   device=device,
                    x_train=x_train,
                    y_train=y_train,
                    RandomState=1337)

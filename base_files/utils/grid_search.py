@@ -109,7 +109,6 @@ def filter_model(ModelName: str,
                                               estimator,
                                               param_grid,
                                               verbose=0)
-            print(GridSearch, Accuracy)
 
         case 'catboost':
             print("\nGRID SEARCH ON CATBOOST")
