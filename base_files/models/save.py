@@ -29,7 +29,7 @@ def model_save(estimator,
                                            NumClass=4,
                                            RandomState=RandomState)
             BestEsti.fit(x_train, y_train)
-            BestEsti.save_model("xgb_loan_fraud.txt")
+            BestEsti.save_model("xgb_loan_fraud.json")
 
         case 'ligthgbm':
             BestParams = estimator.best_params_
@@ -52,4 +52,4 @@ def model_save(estimator,
             BestEsti.save_model('cb_loan_fraud',
                                 format='cbm')
 
-    return None
+    return f'{ModelName} has been saved'

@@ -168,7 +168,7 @@ def train(client,
                                  client=client)
 
         if Model[1] > BestScore:
-            BestModelName = x
+            BestModelName = ModelName
             BestModel = Model[0]
             BestScore = Model[1]
 
