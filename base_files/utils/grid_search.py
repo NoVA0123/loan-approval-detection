@@ -120,10 +120,10 @@ def filter_model(ModelName: str,
                     'reg_lambda': [1, 10, 100],
                     'n_estimators': [10, 50, 100]
                     }
-            estimator = lgbm(device=device,
-                             params=None,
-                             RandomState=1337,
-                             Verbosity=False)
+            estimator = cb_classifier(device=device,
+                                      params=None,
+                                      RandomState=1337,
+                                      verbose=False)
             GridSearch, Accuracy = gridsearch(x_train,
                                               x_test,
                                               y_train,

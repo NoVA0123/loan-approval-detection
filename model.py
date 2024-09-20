@@ -149,20 +149,6 @@ def train(client,
     # print(FilteredModel)
     # Applying gridsearch
     BestScore = 0
-    '''
-    if 'lightgbm' in FilteredModel:
-        Model = filter_model('lightgbm',
-                             x_train,
-                             x_test,
-                             y_train,
-                             y_test,
-                             device=device,
-                             client=client)
-        FilteredModel.remove('lightgbm')
-
-    BestModelName = 'lightgbm'
-    BestModel = Model[0]
-    BestScore = Model[1]
     for ModelName in FilteredModel:
         if ModelName == 'xgboost':
             Model = filter_model(ModelName,
@@ -179,21 +165,12 @@ def train(client,
                                  y_train,
                                  y_test,
                                  device=device,
-                                 client=client)'''
+                                 client=client)
 
-    if 'catboost' in FilteredModel:
-        Model = filter_model('catboost',
-                             x_train,
-                             x_test,
-                             y_train,
-                             y_test,
-                             device=device,
-                             client=client)
-
-    if Model[1] > BestScore:
-        BestModelName = x
-        BestModel = Model[0]
-        BestScore = Model[1]
+        if Model[1] > BestScore:
+            BestModelName = x
+            BestModel = Model[0]
+            BestScore = Model[1]
 
     if client is not None:
         client.close()
