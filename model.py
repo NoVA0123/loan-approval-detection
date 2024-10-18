@@ -42,6 +42,11 @@ def train(client,
     df = treating_every_col(df)
     # print(df.shape)
 
+    # extracting columns
+    with open('columns_selected.txt', 'a') as f:
+        for x in df.columns:
+            f.write(x + '\n')
+
     # Splitting data into features and labels
     y = df[:, 'Approved_Flag']
     x = df.drop('Approved_Flag')
