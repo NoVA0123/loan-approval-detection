@@ -53,7 +53,7 @@ Several machine learning algorithms were employed to identify the best-performin
 
 1. Clone the repository:
 ```
-https://github.com/NoVA0123/loan-approval-detection.git
+git clone https://github.com/NoVA0123/loan-approval-detection.git
 cd loan-approval-detection
 ```
 
