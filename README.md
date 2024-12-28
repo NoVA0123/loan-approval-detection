@@ -53,7 +53,7 @@ Several machine learning algorithms were employed to identify the best-performin
 
 1. Clone the repository:
 ```
-git clone https://github.com/your-username/credit-fraud-detection.git
+https://github.com/NoVA0123/loan-approval-detection.git
 cd loan-approval-detection
 ```
 
